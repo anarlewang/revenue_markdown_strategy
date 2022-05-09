@@ -60,18 +60,18 @@ sales
 ### Function: Plot the markdown strategy
 
 ``` r
-plot_strategy <- function(data) {
+plot_strategy <- function(data, col, miny, maxy, min_limit, max_limit) {
   vlines <- c()
   for (row in 1:nrow(data)){
     if (!is.na(data$markdown[row])){
       vlines <- append(vlines, data$Week[row])
     }
   }
-  p <- ggplot(data, aes(Week, Remaining_Inventory)) + geom_point() + 
-    geom_point(aes(x=0, y=2000)) + xlim(0, 15) + ylim(0, 2000) + 
-    ggtitle(paste("Item", data$Item[1])) + 
-    geom_vline(xintercept = vlines, color="red", linetype = "dotted") +
-    geom_text(aes(x=vlines, label="Markdown", y=2000), colour="red")
+  p <- ggplot(data, aes_string("Week", col)) + geom_point() +
+    geom_point(aes(x=miny, y=maxy)) + xlim(0, 15) + ylim(min_limit, max_limit) +
+    geom_vline(xintercept = vlines, color="red", linetype = "dotted") + 
+    geom_text(aes(x=vlines, label="Markdown", y=max_limit), colour="red") +
+    ggtitle(paste("Item", data$Item[1]))
   p
 }
 ```
@@ -81,11 +81,108 @@ plot_strategy <- function(data) {
 ``` r
 for (i in seq(1, nrow(sales), by=15)) {
   j = i + 14
-  print(plot_strategy(sales[i:j,]))
+  print(plot_strategy(sales[i:j,], "Remaining_Inventory", 0, 2000, 0, 2000))
 }
 ```
 
 ![](group_assignment1_files/figure-gfm/unnamed-chunk-4-1.png)<!-- -->![](group_assignment1_files/figure-gfm/unnamed-chunk-4-2.png)<!-- -->![](group_assignment1_files/figure-gfm/unnamed-chunk-4-3.png)<!-- -->![](group_assignment1_files/figure-gfm/unnamed-chunk-4-4.png)<!-- -->![](group_assignment1_files/figure-gfm/unnamed-chunk-4-5.png)<!-- -->![](group_assignment1_files/figure-gfm/unnamed-chunk-4-6.png)<!-- -->![](group_assignment1_files/figure-gfm/unnamed-chunk-4-7.png)<!-- -->![](group_assignment1_files/figure-gfm/unnamed-chunk-4-8.png)<!-- -->![](group_assignment1_files/figure-gfm/unnamed-chunk-4-9.png)<!-- -->![](group_assignment1_files/figure-gfm/unnamed-chunk-4-10.png)<!-- -->![](group_assignment1_files/figure-gfm/unnamed-chunk-4-11.png)<!-- -->![](group_assignment1_files/figure-gfm/unnamed-chunk-4-12.png)<!-- -->![](group_assignment1_files/figure-gfm/unnamed-chunk-4-13.png)<!-- -->![](group_assignment1_files/figure-gfm/unnamed-chunk-4-14.png)<!-- -->![](group_assignment1_files/figure-gfm/unnamed-chunk-4-15.png)<!-- -->
+
+# Add sales difference column
+
+``` r
+sales['sales_diff'] <- NA
+for (i in seq(1, nrow(sales), by=15)) {
+  j = i+13
+  for (k in i:j) {
+    sales[k+1, 'sales_diff'] <- round((sales[k+1, 'Sales'] - sales[k, 'Sales']) / sales[k, 'Sales'], 2)
+  }
+}
+sales
+```
+
+    ## # A tibble: 225 x 7
+    ##     Item  Week Price Sales Remaining_Inventory markdown sales_diff
+    ##    <dbl> <dbl> <dbl> <dbl>               <dbl>    <dbl>      <dbl>
+    ##  1     1     1    60    57                1943       NA      NA   
+    ##  2     1     2    60    98                1845       NA       0.72
+    ##  3     1     3    60    55                1790       NA      -0.44
+    ##  4     1     4    60    41                1749       NA      -0.25
+    ##  5     1     5    60    60                1689       NA       0.46
+    ##  6     1     6    60    39                1650       NA      -0.35
+    ##  7     1     7    54   106                1544       10       1.72
+    ##  8     1     8    54    55                1489       NA      -0.48
+    ##  9     1     9    54    64                1425       NA       0.16
+    ## 10     1    10    54    43                1382       NA      -0.33
+    ## # ... with 215 more rows
+
+### Plot sales difference for each item
+
+``` r
+for (i in seq(1, nrow(sales), by=15)) {
+  j = i + 14
+  print(plot_strategy(sales[i:j,], "sales_diff", 0, 0, -2.5, 2.5))
+}
+```
+
+    ## Warning: Removed 1 rows containing missing values (geom_point).
+
+![](group_assignment1_files/figure-gfm/unnamed-chunk-6-1.png)<!-- -->
+
+    ## Warning: Removed 1 rows containing missing values (geom_point).
+
+![](group_assignment1_files/figure-gfm/unnamed-chunk-6-2.png)<!-- -->
+
+    ## Warning: Removed 1 rows containing missing values (geom_point).
+
+![](group_assignment1_files/figure-gfm/unnamed-chunk-6-3.png)<!-- -->
+
+    ## Warning: Removed 1 rows containing missing values (geom_point).
+
+![](group_assignment1_files/figure-gfm/unnamed-chunk-6-4.png)<!-- -->
+
+    ## Warning: Removed 1 rows containing missing values (geom_point).
+
+![](group_assignment1_files/figure-gfm/unnamed-chunk-6-5.png)<!-- -->
+
+    ## Warning: Removed 2 rows containing missing values (geom_point).
+
+![](group_assignment1_files/figure-gfm/unnamed-chunk-6-6.png)<!-- -->
+
+    ## Warning: Removed 1 rows containing missing values (geom_point).
+
+![](group_assignment1_files/figure-gfm/unnamed-chunk-6-7.png)<!-- -->
+
+    ## Warning: Removed 1 rows containing missing values (geom_point).
+
+![](group_assignment1_files/figure-gfm/unnamed-chunk-6-8.png)<!-- -->
+
+    ## Warning: Removed 1 rows containing missing values (geom_point).
+
+![](group_assignment1_files/figure-gfm/unnamed-chunk-6-9.png)<!-- -->
+
+    ## Warning: Removed 1 rows containing missing values (geom_point).
+
+![](group_assignment1_files/figure-gfm/unnamed-chunk-6-10.png)<!-- -->
+
+    ## Warning: Removed 2 rows containing missing values (geom_point).
+
+![](group_assignment1_files/figure-gfm/unnamed-chunk-6-11.png)<!-- -->
+
+    ## Warning: Removed 2 rows containing missing values (geom_point).
+
+![](group_assignment1_files/figure-gfm/unnamed-chunk-6-12.png)<!-- -->
+
+    ## Warning: Removed 1 rows containing missing values (geom_point).
+
+![](group_assignment1_files/figure-gfm/unnamed-chunk-6-13.png)<!-- -->
+
+    ## Warning: Removed 1 rows containing missing values (geom_point).
+
+![](group_assignment1_files/figure-gfm/unnamed-chunk-6-14.png)<!-- -->
+
+    ## Warning: Removed 2 rows containing missing values (geom_point).
+
+![](group_assignment1_files/figure-gfm/unnamed-chunk-6-15.png)<!-- -->
 
 ### Function: Calculate the revenue
 
@@ -153,26 +250,26 @@ strategy
     ## 14   14   10       40   68604       463
     ## 15   15   10       40   71460       389
 
-### Re-order strategy by decreasing revenue
+### Re-order strategy by decreasing remaining inventory
 
 ``` r
-strategy_ordered <- strategy[order(strategy$revenue, decreasing = TRUE),]
+strategy_ordered <- strategy[order(strategy$remaining, decreasing = FALSE),]
 strategy_ordered
 ```
 
     ##    item week markdown revenue remaining
-    ## 2     2    7       10  108744        58
     ## 6     6    8       20  105588         0
     ## 11   11   10       40   93696         0
-    ## 5     5    7       10   88542       422
-    ## 9     9    8       20   81600       429
+    ## 2     2    7       10  108744        58
     ## 13   13   10       40   77880       230
     ## 12   12   10       40   75336       292
-    ## 7     7    8       20   74256       571
     ## 15   15   10       40   71460       389
+    ## 5     5    7       10   88542       422
+    ## 9     9    8       20   81600       429
     ## 14   14   10       40   68604       463
+    ## 7     7    8       20   74256       571
     ## 10   10    8       20   65556       752
+    ## 8     8    8       20   59412       855
     ## 3     3    7       10   61374       903
     ## 4     4    7       10   59874       932
-    ## 8     8    8       20   59412       855
     ## 1     1    7       10   57936       966

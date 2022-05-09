@@ -39,18 +39,18 @@ sales
 ### Function: Plot the markdown strategy
 
 ```{r}
-plot_strategy <- function(data) {
+plot_strategy <- function(data, col, miny, maxy, min_limit, max_limit) {
   vlines <- c()
   for (row in 1:nrow(data)){
     if (!is.na(data$markdown[row])){
       vlines <- append(vlines, data$Week[row])
     }
   }
-  p <- ggplot(data, aes(Week, Remaining_Inventory)) + geom_point() + 
-    geom_point(aes(x=0, y=2000)) + xlim(0, 15) + ylim(0, 2000) + 
-    ggtitle(paste("Item", data$Item[1])) + 
-    geom_vline(xintercept = vlines, color="red", linetype = "dotted") +
-    geom_text(aes(x=vlines, label="Markdown", y=2000), colour="red")
+  p <- ggplot(data, aes_string("Week", col)) + geom_point() +
+    geom_point(aes(x=miny, y=maxy)) + xlim(0, 15) + ylim(min_limit, max_limit) +
+    geom_vline(xintercept = vlines, color="red", linetype = "dotted") + 
+    geom_text(aes(x=vlines, label="Markdown", y=max_limit), colour="red") +
+    ggtitle(paste("Item", data$Item[1]))
   p
 }
 ```
@@ -60,7 +60,29 @@ plot_strategy <- function(data) {
 ```{r}
 for (i in seq(1, nrow(sales), by=15)) {
   j = i + 14
-  print(plot_strategy(sales[i:j,]))
+  print(plot_strategy(sales[i:j,], "Remaining_Inventory", 0, 2000, 0, 2000))
+}
+```
+
+# Add sales difference column
+
+```{r}
+sales['sales_diff'] <- NA
+for (i in seq(1, nrow(sales), by=15)) {
+  j = i+13
+  for (k in i:j) {
+    sales[k+1, 'sales_diff'] <- round((sales[k+1, 'Sales'] - sales[k, 'Sales']) / sales[k, 'Sales'], 2)
+  }
+}
+sales
+```
+
+### Plot sales difference for each item
+
+```{r}
+for (i in seq(1, nrow(sales), by=15)) {
+  j = i + 14
+  print(plot_strategy(sales[i:j,], "sales_diff", 0, 0, -2.5, 2.5))
 }
 ```
 
@@ -113,10 +135,10 @@ rownames(strategy) <- 1:nrow(strategy)
 strategy
 ```
 
-### Re-order strategy by decreasing revenue
+### Re-order strategy by decreasing remaining inventory
 
 ```{r}
-strategy_ordered <- strategy[order(strategy$revenue, decreasing = TRUE),]
+strategy_ordered <- strategy[order(strategy$remaining, decreasing = FALSE),]
 strategy_ordered
 ```
 
