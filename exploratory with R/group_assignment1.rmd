@@ -1,0 +1,123 @@
+---
+title: "Group Assignment 1"
+output: github_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+library("readxl")
+library(ggplot2)
+```
+
+## Load Data
+
+You can include R code in the document as follows:
+
+```{r}
+sales <- read_excel("sales-data_clean.xlsx")
+sales
+```
+
+## Data Exploration
+
+### Add markdown column
+
+```{r}
+sales['markdown'] <- NA
+for (i in seq(1, nrow(sales), by=15)) {
+  j = i+13
+  for (k in i:j) {
+    if (sales[k, 'Price'] != sales[k+1, 'Price']) {
+      sales[k+1, 'markdown'] <- (60 - sales[k+1, 'Price'])/60*100
+    }
+  }
+}
+sales
+```
+
+### Function: Plot the markdown strategy
+
+```{r}
+plot_strategy <- function(data) {
+  vlines <- c()
+  for (row in 1:nrow(data)){
+    if (!is.na(data$markdown[row])){
+      vlines <- append(vlines, data$Week[row])
+    }
+  }
+  p <- ggplot(data, aes(Week, Remaining_Inventory)) + geom_point() + 
+    geom_point(aes(x=0, y=2000)) + xlim(0, 15) + ylim(0, 2000) + 
+    ggtitle(paste("Item", data$Item[1])) + 
+    geom_vline(xintercept = vlines, color="red", linetype = "dotted") +
+    geom_text(aes(x=vlines, label="Markdown", y=2000), colour="red")
+  p
+}
+```
+
+### Plot strategy for each item
+
+```{r}
+for (i in seq(1, nrow(sales), by=15)) {
+  j = i + 14
+  print(plot_strategy(sales[i:j,]))
+}
+```
+
+### Function: Calculate the revenue
+
+```{r}
+calculate_revenue <- function(data) {
+  revenue = 0
+  for(row in 1:nrow(data)){
+    revenue = revenue + data$Price[row] * data$Sales[row]
+  }
+  return(revenue)
+}
+```
+
+### Function: Get strategy
+
+```{r}
+strategize <- function(data){
+  for (row in 1:nrow(data)){
+    if (!is.na(data$markdown[row])) {
+      col <- c(data$Item[row], data$Week[row], data$markdown[row], 
+               calculate_revenue(data), data$Remaining_Inventory[nrow(data)])
+      strategy[nrow(strategy) + 1,] <- col
+    }
+  }
+  return(strategy)
+}
+```
+
+### Get strategy for each item
+
+```{r}
+# add first row to remove later
+item <- c(0)
+week <- c(0)
+markdown <- c(0)
+revenue <- c(0)
+remaining <- c(0)
+strategy <- data.frame(item, week, markdown, revenue, remaining)
+
+for (i in seq(1, nrow(sales), by=15)) {
+  j = i + 14
+  strategy <- strategize(sales[i:j,])
+}
+
+# remove first row
+strategy = strategy[-1,]
+rownames(strategy) <- 1:nrow(strategy)
+strategy
+```
+
+### Re-order strategy by decreasing revenue
+
+```{r}
+strategy_ordered <- strategy[order(strategy$revenue, decreasing = TRUE),]
+strategy_ordered
+```
+
+
